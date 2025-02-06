@@ -1,52 +1,88 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "stack.h"
+#include <stdlib.h>
 
-stack createstack(stack s, int size){
-    s = (stack) malloc(sizeof(struct __stacknode));
-    s->ele = (int *)malloc(size * sizeof(int));
-    s->size = size;
-    s->top = -1;  // top index
+#define BLANK_VAL -1
+
+node* create_blank_node() {
+    node *blank = (node *) malloc(sizeof(node));
+    blank->val = BLANK_VAL;
+    blank->next = NULL;
+    blank->prev = NULL;
+    return blank;
+}
+
+void pre_allocate_stack(stack s, int capacity) {
+    // This node will signify the bottom of the stack
+    s->head = create_blank_node(); 
+    node* current = s->head;
+    for(int i = 0; i < capacity; i++) {
+        node* blank = create_blank_node();
+        current->next = blank;
+        blank->prev = current;
+        current = current->next;
+    }
+    s->top = s->head;
+}
+
+stack create_stack(int capacity) {
+    stack s = (stack) malloc(sizeof(struct STACK));    
+    s->capacity = capacity;
+    s->elements = 0;
+    s->top = NULL;
+    s->head = NULL;
+    
+    if (capacity <= 0) {
+        return s;
+    }
+
+    pre_allocate_stack(s, capacity);
+
     return s;
 }
 
-int isFull(stack s){
-    return (s -> top + 1 == s -> size)? 1: 0;
+void destroy_stack(stack s) {
+    while(s->head != NULL) {
+        node* next = s->head->next;
+        free(s->head);
+        s->head = next;
+    }
+    free(s);
 }
 
-int isEmpty(stack s){
-    return s -> top == -1;
-}
-
-void push(stack s, int value){
-    if (isFull(s)){
-        // printf("stack is full.\n");
+void push(stack s, int value) {
+    if (is_full(s)) {
         return;
     }
-    s -> top = s -> top + 1;
-    s -> ele[s -> top] = value;
+
+    s->top = s->top->next;
+    s->top->val = value;
+    s->elements += 1;
 }
 
-int pop(stack s){
-    if (isEmpty(s)){
-        // printf("stack is empty.\n");
-        return -1;
+int pop(stack s) {
+    if (is_empty(s)) {
+        return BLANK_VAL;
     }
-    int t = s -> top;
-    s -> top = s -> top - 1;
-    return s -> ele[t];
+
+    int res = s->top->val; // we don't need to reset the value
+    s->top = s->top->prev;
+    s->elements -= 1;
+
+    return res;
 }
 
-int peek(stack s){
-    if (isEmpty(s)){
-        // printf("stack is empty.\n");
-        return -1;
+int top(stack s) {
+    if (is_empty(s)) {
+        return BLANK_VAL;
     }
-    return s -> ele[s -> top];
+
+    return s->top->val;
 }
-void destroystack(stack s){
-    s -> size = 0;
-    s -> top = -1;
-    free(s -> ele);
-    s -> ele = NULL;
+
+bool is_full(stack s) {
+    return s->elements == s->capacity;
+}
+
+bool is_empty(stack s) {
+    return s->elements == 0;
 }
